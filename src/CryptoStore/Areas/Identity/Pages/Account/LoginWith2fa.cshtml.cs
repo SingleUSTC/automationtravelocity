@@ -78,4 +78,20 @@
 
             if (result.Succeeded)
             {
-                logger.Log
+                logger.LogInformation("User with ID '{UserId}' logged in with 2fa.", user.Id);
+                return LocalRedirect(returnUrl);
+            }
+            else if (result.IsLockedOut)
+            {
+                logger.LogWarning("User with ID '{UserId}' account locked out.", user.Id);
+                return RedirectToPage("./Lockout");
+            }
+            else
+            {
+                logger.LogWarning("Invalid authenticator code entered for user with ID '{UserId}'.", user.Id);
+                ModelState.AddModelError(string.Empty, "Invalid authenticator code.");
+                return Page();
+            }
+        }
+    }
+}
