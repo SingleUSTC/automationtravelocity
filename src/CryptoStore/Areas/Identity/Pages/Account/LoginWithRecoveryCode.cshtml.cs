@@ -75,4 +75,15 @@
             }
             if (result.IsLockedOut)
             {
-                logger.Log
+                logger.LogWarning("User with ID '{UserId}' account locked out.", user.Id);
+                return RedirectToPage("./Lockout");
+            }
+            else
+            {
+                logger.LogWarning("Invalid recovery code entered for user with ID '{UserId}' ", user.Id);
+                ModelState.AddModelError(string.Empty, "Invalid recovery code entered.");
+                return Page();
+            }
+        }
+    }
+}
