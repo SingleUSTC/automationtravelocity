@@ -68,4 +68,28 @@
         }
 
         [Authorize(Roles = Admin)]
-        [Authorize(Policy = Write
+        [Authorize(Policy = WritePolicy)]
+        public async Task<IActionResult> DetailsNotification(int id)
+        {
+            var model = await this.messageNotification.DetailsAsync(id);
+
+            return this.View(model);
+        }
+
+        [Authorize(Roles = Admin)]
+        [Authorize(Policy = WritePolicy)]
+        [HttpGet(Id)] 
+        public async Task<IActionResult> Clear(int id) 
+        {
+            await this.messageNotification.ClearAsync(id);
+
+            this.TempData.Put("__Message", new MessageModel()
+            {
+                Type = MessageType.Success,
+                Message = "Succesfull!" 
+            });
+
+            return RedirectToAction("Notifications"); 
+        }
+    }
+}
