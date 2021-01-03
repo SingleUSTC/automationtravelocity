@@ -157,4 +157,35 @@
                             <br />
                             <p><b>Choose a payment method between: Lightning or On-Chain!</b></p>
                             <p><b>Scan the QR code and send the bitcoins/satoshi to pay for the given service.</b></p>
-                            <p><b>Once you pay, you will receive an email within ha
+                            <p><b>Once you pay, you will receive an email within half an hour with the service you paid for.</b></p>
+                        </div>
+                    </div>
+                    <div class="col-25">
+                        <div class="container">
+                            <h4><b>Cart</b><span class="price" style="color:black"><i class="fa fa-shopping-cart"></i></span></h4>
+                            <label asp-for="ServiceName" class="control-label"></label>
+                            <input asp-for="ServiceName" readonly="readonly" class="form-control" />
+                            <span asp-validation-for="ServiceName" class="text-danger"></span>
+
+                            <label asp-for="CryptoToken" class="control-label"></label>
+                            <input asp-for="CryptoToken" readonly="readonly" class="form-control" />
+                            <span asp-validation-for="CryptoToken" class="text-danger"></span>
+
+                            <hr>
+                            <label asp-for="TotalSum" class="control-label"></label>
+                            <input asp-for="TotalSum" readonly="readonly" class="form-control" />
+                            <span asp-validation-for="TotalSum" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <input type="submit" value="Checkout" class="btn">
+                </form>
+            </div>
+        </div>
+
+    </div>
+</body>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+
