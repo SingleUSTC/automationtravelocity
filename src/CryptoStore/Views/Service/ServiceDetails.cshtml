@@ -1,0 +1,44 @@
+﻿@model IEnumerable<CryptoStore.ViewModels.ServiceVeiwModel.ServiceDetailsViewModel>
+
+@{
+    ViewData["Title"] = "ServiceDetails";
+}
+<br />
+<br />
+<title>CryptoFuture</title>
+<style>
+    body, h1, h2, h3, h4, h5 {
+        font-family: "Poppins", sans-serif
+    }
+
+    body {
+        font-size: 16px;
+    }
+
+    .w3-half img {
+        margin-bottom: -6px;
+        margin-top: 16px;
+        opacity: 0.8;
+        cursor: pointer
+    }
+
+        .w3-half img:hover {
+            opacity: 1
+        }
+</style>
+<body>
+
+    <div class="w3-main" style="margin-left:340px;margin-right:40px">
+        @foreach (var service in Model)
+        {
+            <div class="w3-container" style="margin-top:80px" id="showcase">
+                <h1 class="w3-jumbo"><b>@service.Name</b></h1>
+                <hr style="width:50px;border:5px solid red" class="w3-round">
+            </div>
+            <div class="w3-row-padding">
+                <div class="w3-half">
+                    <img src="@service.Image" style="width:100%">
+                </div>
+            </div>
+            <div class="w3-container" style="margin-top:75px">
+                <h1 class="w3-xxxlarge w3-text-red"><b>CryptoFuture.</b
