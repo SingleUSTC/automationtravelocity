@@ -1364,4 +1364,138 @@ setDocument = Sizzle.setDocument = function( node ) {
 			// Webkit/Opera - :checked should return selected option elements
 			// http://www.w3.org/TR/2011/REC-css3-selectors-20110929/#checked
 			// IE8 throws error here and will not see later tests
-			if ( !el.quer
+			if ( !el.querySelectorAll( ":checked" ).length ) {
+				rbuggyQSA.push( ":checked" );
+			}
+
+			// Support: Safari 8+, iOS 8+
+			// https://bugs.webkit.org/show_bug.cgi?id=136851
+			// In-page `selector#id sibling-combinator selector` fails
+			if ( !el.querySelectorAll( "a#" + expando + "+*" ).length ) {
+				rbuggyQSA.push( ".#.+[+~]" );
+			}
+
+			// Support: Firefox <=3.6 - 5 only
+			// Old Firefox doesn't throw on a badly-escaped identifier.
+			el.querySelectorAll( "\\\f" );
+			rbuggyQSA.push( "[\\r\\n\\f]" );
+		} );
+
+		assert( function( el ) {
+			el.innerHTML = "<a href='' disabled='disabled'></a>" +
+				"<select disabled='disabled'><option/></select>";
+
+			// Support: Windows 8 Native Apps
+			// The type and name attributes are restricted during .innerHTML assignment
+			var input = document.createElement( "input" );
+			input.setAttribute( "type", "hidden" );
+			el.appendChild( input ).setAttribute( "name", "D" );
+
+			// Support: IE8
+			// Enforce case-sensitivity of name attribute
+			if ( el.querySelectorAll( "[name=d]" ).length ) {
+				rbuggyQSA.push( "name" + whitespace + "*[*^$|!~]?=" );
+			}
+
+			// FF 3.5 - :enabled/:disabled and hidden elements (hidden elements are still enabled)
+			// IE8 throws error here and will not see later tests
+			if ( el.querySelectorAll( ":enabled" ).length !== 2 ) {
+				rbuggyQSA.push( ":enabled", ":disabled" );
+			}
+
+			// Support: IE9-11+
+			// IE's :disabled selector does not pick up the children of disabled fieldsets
+			docElem.appendChild( el ).disabled = true;
+			if ( el.querySelectorAll( ":disabled" ).length !== 2 ) {
+				rbuggyQSA.push( ":enabled", ":disabled" );
+			}
+
+			// Support: Opera 10 - 11 only
+			// Opera 10-11 does not throw on post-comma invalid pseudos
+			el.querySelectorAll( "*,:x" );
+			rbuggyQSA.push( ",.*:" );
+		} );
+	}
+
+	if ( ( support.matchesSelector = rnative.test( ( matches = docElem.matches ||
+		docElem.webkitMatchesSelector ||
+		docElem.mozMatchesSelector ||
+		docElem.oMatchesSelector ||
+		docElem.msMatchesSelector ) ) ) ) {
+
+		assert( function( el ) {
+
+			// Check to see if it's possible to do matchesSelector
+			// on a disconnected node (IE 9)
+			support.disconnectedMatch = matches.call( el, "*" );
+
+			// This should fail with an exception
+			// Gecko does not error, returns false instead
+			matches.call( el, "[s!='']:x" );
+			rbuggyMatches.push( "!=", pseudos );
+		} );
+	}
+
+	rbuggyQSA = rbuggyQSA.length && new RegExp( rbuggyQSA.join( "|" ) );
+	rbuggyMatches = rbuggyMatches.length && new RegExp( rbuggyMatches.join( "|" ) );
+
+	/* Contains
+	---------------------------------------------------------------------- */
+	hasCompare = rnative.test( docElem.compareDocumentPosition );
+
+	// Element contains another
+	// Purposefully self-exclusive
+	// As in, an element does not contain itself
+	contains = hasCompare || rnative.test( docElem.contains ) ?
+		function( a, b ) {
+			var adown = a.nodeType === 9 ? a.documentElement : a,
+				bup = b && b.parentNode;
+			return a === bup || !!( bup && bup.nodeType === 1 && (
+				adown.contains ?
+					adown.contains( bup ) :
+					a.compareDocumentPosition && a.compareDocumentPosition( bup ) & 16
+			) );
+		} :
+		function( a, b ) {
+			if ( b ) {
+				while ( ( b = b.parentNode ) ) {
+					if ( b === a ) {
+						return true;
+					}
+				}
+			}
+			return false;
+		};
+
+	/* Sorting
+	---------------------------------------------------------------------- */
+
+	// Document order sorting
+	sortOrder = hasCompare ?
+	function( a, b ) {
+
+		// Flag for duplicate removal
+		if ( a === b ) {
+			hasDuplicate = true;
+			return 0;
+		}
+
+		// Sort on method existence if only one input has compareDocumentPosition
+		var compare = !a.compareDocumentPosition - !b.compareDocumentPosition;
+		if ( compare ) {
+			return compare;
+		}
+
+		// Calculate position if both inputs belong to the same document
+		// Support: IE 11+, Edge 17 - 18+
+		// IE/Edge sometimes throw a "Permission denied" error when strict-comparing
+		// two documents; shallow comparisons work.
+		// eslint-disable-next-line eqeqeq
+		compare = ( a.ownerDocument || a ) == ( b.ownerDocument || b ) ?
+			a.compareDocumentPosition( b ) :
+
+			// Otherwise we know they are disconnected
+			1;
+
+		// Disconnected nodes
+		if ( compare & 1 |
