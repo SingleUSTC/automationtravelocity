@@ -187,3 +187,173 @@ $.validator.addMethod( "bic", function( value, element ) {
  *   H         Number
  *   K         Letter
  *   P         Letter
+ *   Q         Letter
+ *   S         Letter
+ *
+ */
+$.validator.addMethod( "cifES", function( value, element ) {
+	"use strict";
+
+	if ( this.optional( element ) ) {
+		return true;
+	}
+
+	var cifRegEx = new RegExp( /^([ABCDEFGHJKLMNPQRSUVW])(\d{7})([0-9A-J])$/gi );
+	var letter  = value.substring( 0, 1 ), // [ T ]
+		number  = value.substring( 1, 8 ), // [ P ][ P ][ N ][ N ][ N ][ N ][ N ]
+		control = value.substring( 8, 9 ), // [ C ]
+		all_sum = 0,
+		even_sum = 0,
+		odd_sum = 0,
+		i, n,
+		control_digit,
+		control_letter;
+
+	function isOdd( n ) {
+		return n % 2 === 0;
+	}
+
+	// Quick format test
+	if ( value.length !== 9 || !cifRegEx.test( value ) ) {
+		return false;
+	}
+
+	for ( i = 0; i < number.length; i++ ) {
+		n = parseInt( number[ i ], 10 );
+
+		// Odd positions
+		if ( isOdd( i ) ) {
+
+			// Odd positions are multiplied first.
+			n *= 2;
+
+			// If the multiplication is bigger than 10 we need to adjust
+			odd_sum += n < 10 ? n : n - 9;
+
+		// Even positions
+		// Just sum them
+		} else {
+			even_sum += n;
+		}
+	}
+
+	all_sum = even_sum + odd_sum;
+	control_digit = ( 10 - ( all_sum ).toString().substr( -1 ) ).toString();
+	control_digit = parseInt( control_digit, 10 ) > 9 ? "0" : control_digit;
+	control_letter = "JABCDEFGHI".substr( control_digit, 1 ).toString();
+
+	// Control must be a digit
+	if ( letter.match( /[ABEH]/ ) ) {
+		return control === control_digit;
+
+	// Control must be a letter
+	} else if ( letter.match( /[KPQS]/ ) ) {
+		return control === control_letter;
+	}
+
+	// Can be either
+	return control === control_digit || control === control_letter;
+
+}, "Please specify a valid CIF number." );
+
+/*
+ * Brazillian CPF number (Cadastrado de Pessoas Físicas) is the equivalent of a Brazilian tax registration number.
+ * CPF numbers have 11 digits in total: 9 numbers followed by 2 check numbers that are being used for validation.
+ */
+$.validator.addMethod( "cpfBR", function( value ) {
+
+	// Removing special characters from value
+	value = value.replace( /([~!@#$%^&*()_+=`{}\[\]\-|\\:;'<>,.\/? ])+/g, "" );
+
+	// Checking value to have 11 digits only
+	if ( value.length !== 11 ) {
+		return false;
+	}
+
+	var sum = 0,
+		firstCN, secondCN, checkResult, i;
+
+	firstCN = parseInt( value.substring( 9, 10 ), 10 );
+	secondCN = parseInt( value.substring( 10, 11 ), 10 );
+
+	checkResult = function( sum, cn ) {
+		var result = ( sum * 10 ) % 11;
+		if ( ( result === 10 ) || ( result === 11 ) ) {
+			result = 0;
+		}
+		return ( result === cn );
+	};
+
+	// Checking for dump data
+	if ( value === "" ||
+		value === "00000000000" ||
+		value === "11111111111" ||
+		value === "22222222222" ||
+		value === "33333333333" ||
+		value === "44444444444" ||
+		value === "55555555555" ||
+		value === "66666666666" ||
+		value === "77777777777" ||
+		value === "88888888888" ||
+		value === "99999999999"
+	) {
+		return false;
+	}
+
+	// Step 1 - using first Check Number:
+	for ( i = 1; i <= 9; i++ ) {
+		sum = sum + parseInt( value.substring( i - 1, i ), 10 ) * ( 11 - i );
+	}
+
+	// If first Check Number (CN) is valid, move to Step 2 - using second Check Number:
+	if ( checkResult( sum, firstCN ) ) {
+		sum = 0;
+		for ( i = 1; i <= 10; i++ ) {
+			sum = sum + parseInt( value.substring( i - 1, i ), 10 ) * ( 12 - i );
+		}
+		return checkResult( sum, secondCN );
+	}
+	return false;
+
+}, "Please specify a valid CPF number" );
+
+// https://jqueryvalidation.org/creditcard-method/
+// based on https://en.wikipedia.org/wiki/Luhn_algorithm
+$.validator.addMethod( "creditcard", function( value, element ) {
+	if ( this.optional( element ) ) {
+		return "dependency-mismatch";
+	}
+
+	// Accept only spaces, digits and dashes
+	if ( /[^0-9 \-]+/.test( value ) ) {
+		return false;
+	}
+
+	var nCheck = 0,
+		nDigit = 0,
+		bEven = false,
+		n, cDigit;
+
+	value = value.replace( /\D/g, "" );
+
+	// Basing min and max length on
+	// https://developer.ean.com/general_info/Valid_Credit_Card_Types
+	if ( value.length < 13 || value.length > 19 ) {
+		return false;
+	}
+
+	for ( n = value.length - 1; n >= 0; n-- ) {
+		cDigit = value.charAt( n );
+		nDigit = parseInt( cDigit, 10 );
+		if ( bEven ) {
+			if ( ( nDigit *= 2 ) > 9 ) {
+				nDigit -= 9;
+			}
+		}
+
+		nCheck += nDigit;
+		bEven = !bEven;
+	}
+
+	return ( nCheck % 10 ) === 0;
+}, "Please enter a valid credi
