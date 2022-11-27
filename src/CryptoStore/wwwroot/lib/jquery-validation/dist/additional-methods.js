@@ -495,4 +495,140 @@ $.validator.addMethod( "dateFA", function( value, element ) {
  */
 $.validator.addMethod( "dateITA", function( value, element ) {
 	var check = false,
-		re = /^\d{1,2}\/\d
+		re = /^\d{1,2}\/\d{1,2}\/\d{4}$/,
+		adata, gg, mm, aaaa, xdata;
+	if ( re.test( value ) ) {
+		adata = value.split( "/" );
+		gg = parseInt( adata[ 0 ], 10 );
+		mm = parseInt( adata[ 1 ], 10 );
+		aaaa = parseInt( adata[ 2 ], 10 );
+		xdata = new Date( Date.UTC( aaaa, mm - 1, gg, 12, 0, 0, 0 ) );
+		if ( ( xdata.getUTCFullYear() === aaaa ) && ( xdata.getUTCMonth() === mm - 1 ) && ( xdata.getUTCDate() === gg ) ) {
+			check = true;
+		} else {
+			check = false;
+		}
+	} else {
+		check = false;
+	}
+	return this.optional( element ) || check;
+}, $.validator.messages.date );
+
+$.validator.addMethod( "dateNL", function( value, element ) {
+	return this.optional( element ) || /^(0?[1-9]|[12]\d|3[01])[\.\/\-](0?[1-9]|1[012])[\.\/\-]([12]\d)?(\d\d)$/.test( value );
+}, $.validator.messages.date );
+
+// Older "accept" file extension method. Old docs: http://docs.jquery.com/Plugins/Validation/Methods/accept
+$.validator.addMethod( "extension", function( value, element, param ) {
+	param = typeof param === "string" ? param.replace( /,/g, "|" ) : "png|jpe?g|gif";
+	return this.optional( element ) || value.match( new RegExp( "\\.(" + param + ")$", "i" ) );
+}, $.validator.format( "Please enter a value with a valid extension." ) );
+
+/**
+ * Dutch giro account numbers (not bank numbers) have max 7 digits
+ */
+$.validator.addMethod( "giroaccountNL", function( value, element ) {
+	return this.optional( element ) || /^[0-9]{1,7}$/.test( value );
+}, "Please specify a valid giro account number" );
+
+/**
+ * IBAN is the international bank account number.
+ * It has a country - specific format, that is checked here too
+ *
+ * Validation is case-insensitive. Please make sure to normalize input yourself.
+ */
+$.validator.addMethod( "iban", function( value, element ) {
+
+	// Some quick simple tests to prevent needless work
+	if ( this.optional( element ) ) {
+		return true;
+	}
+
+	// Remove spaces and to upper case
+	var iban = value.replace( / /g, "" ).toUpperCase(),
+		ibancheckdigits = "",
+		leadingZeroes = true,
+		cRest = "",
+		cOperator = "",
+		countrycode, ibancheck, charAt, cChar, bbanpattern, bbancountrypatterns, ibanregexp, i, p;
+
+	// Check for IBAN code length.
+	// It contains:
+	// country code ISO 3166-1 - two letters,
+	// two check digits,
+	// Basic Bank Account Number (BBAN) - up to 30 chars
+	var minimalIBANlength = 5;
+	if ( iban.length < minimalIBANlength ) {
+		return false;
+	}
+
+	// Check the country code and find the country specific format
+	countrycode = iban.substring( 0, 2 );
+	bbancountrypatterns = {
+		"AL": "\\d{8}[\\dA-Z]{16}",
+		"AD": "\\d{8}[\\dA-Z]{12}",
+		"AT": "\\d{16}",
+		"AZ": "[\\dA-Z]{4}\\d{20}",
+		"BE": "\\d{12}",
+		"BH": "[A-Z]{4}[\\dA-Z]{14}",
+		"BA": "\\d{16}",
+		"BR": "\\d{23}[A-Z][\\dA-Z]",
+		"BG": "[A-Z]{4}\\d{6}[\\dA-Z]{8}",
+		"CR": "\\d{17}",
+		"HR": "\\d{17}",
+		"CY": "\\d{8}[\\dA-Z]{16}",
+		"CZ": "\\d{20}",
+		"DK": "\\d{14}",
+		"DO": "[A-Z]{4}\\d{20}",
+		"EE": "\\d{16}",
+		"FO": "\\d{14}",
+		"FI": "\\d{14}",
+		"FR": "\\d{10}[\\dA-Z]{11}\\d{2}",
+		"GE": "[\\dA-Z]{2}\\d{16}",
+		"DE": "\\d{18}",
+		"GI": "[A-Z]{4}[\\dA-Z]{15}",
+		"GR": "\\d{7}[\\dA-Z]{16}",
+		"GL": "\\d{14}",
+		"GT": "[\\dA-Z]{4}[\\dA-Z]{20}",
+		"HU": "\\d{24}",
+		"IS": "\\d{22}",
+		"IE": "[\\dA-Z]{4}\\d{14}",
+		"IL": "\\d{19}",
+		"IT": "[A-Z]\\d{10}[\\dA-Z]{12}",
+		"KZ": "\\d{3}[\\dA-Z]{13}",
+		"KW": "[A-Z]{4}[\\dA-Z]{22}",
+		"LV": "[A-Z]{4}[\\dA-Z]{13}",
+		"LB": "\\d{4}[\\dA-Z]{20}",
+		"LI": "\\d{5}[\\dA-Z]{12}",
+		"LT": "\\d{16}",
+		"LU": "\\d{3}[\\dA-Z]{13}",
+		"MK": "\\d{3}[\\dA-Z]{10}\\d{2}",
+		"MT": "[A-Z]{4}\\d{5}[\\dA-Z]{18}",
+		"MR": "\\d{23}",
+		"MU": "[A-Z]{4}\\d{19}[A-Z]{3}",
+		"MC": "\\d{10}[\\dA-Z]{11}\\d{2}",
+		"MD": "[\\dA-Z]{2}\\d{18}",
+		"ME": "\\d{18}",
+		"NL": "[A-Z]{4}\\d{10}",
+		"NO": "\\d{11}",
+		"PK": "[\\dA-Z]{4}\\d{16}",
+		"PS": "[\\dA-Z]{4}\\d{21}",
+		"PL": "\\d{24}",
+		"PT": "\\d{21}",
+		"RO": "[A-Z]{4}[\\dA-Z]{16}",
+		"SM": "[A-Z]\\d{10}[\\dA-Z]{12}",
+		"SA": "\\d{2}[\\dA-Z]{18}",
+		"RS": "\\d{18}",
+		"SK": "\\d{20}",
+		"SI": "\\d{15}",
+		"ES": "\\d{20}",
+		"SE": "\\d{20}",
+		"CH": "\\d{5}[\\dA-Z]{12}",
+		"TN": "\\d{20}",
+		"TR": "\\d{5}[\\dA-Z]{17}",
+		"AE": "\\d{3}\\d{16}",
+		"GB": "[A-Z]{4}\\d{14}",
+		"VG": "[\\dA-Z]{4}\\d{16}"
+	};
+
+	bbanpattern = bbancountrypatterns[ countryc
