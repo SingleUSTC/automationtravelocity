@@ -356,4 +356,143 @@ $.validator.addMethod( "creditcard", function( value, element ) {
 	}
 
 	return ( nCheck % 10 ) === 0;
-}, "Please enter a valid credi
+}, "Please enter a valid credit card number." );
+
+/* NOTICE: Modified version of Castle.Components.Validator.CreditCardValidator
+ * Redistributed under the the Apache License 2.0 at http://www.apache.org/licenses/LICENSE-2.0
+ * Valid Types: mastercard, visa, amex, dinersclub, enroute, discover, jcb, unknown, all (overrides all other settings)
+ */
+$.validator.addMethod( "creditcardtypes", function( value, element, param ) {
+	if ( /[^0-9\-]+/.test( value ) ) {
+		return false;
+	}
+
+	value = value.replace( /\D/g, "" );
+
+	var validTypes = 0x0000;
+
+	if ( param.mastercard ) {
+		validTypes |= 0x0001;
+	}
+	if ( param.visa ) {
+		validTypes |= 0x0002;
+	}
+	if ( param.amex ) {
+		validTypes |= 0x0004;
+	}
+	if ( param.dinersclub ) {
+		validTypes |= 0x0008;
+	}
+	if ( param.enroute ) {
+		validTypes |= 0x0010;
+	}
+	if ( param.discover ) {
+		validTypes |= 0x0020;
+	}
+	if ( param.jcb ) {
+		validTypes |= 0x0040;
+	}
+	if ( param.unknown ) {
+		validTypes |= 0x0080;
+	}
+	if ( param.all ) {
+		validTypes = 0x0001 | 0x0002 | 0x0004 | 0x0008 | 0x0010 | 0x0020 | 0x0040 | 0x0080;
+	}
+	if ( validTypes & 0x0001 && /^(5[12345])/.test( value ) ) { // Mastercard
+		return value.length === 16;
+	}
+	if ( validTypes & 0x0002 && /^(4)/.test( value ) ) { // Visa
+		return value.length === 16;
+	}
+	if ( validTypes & 0x0004 && /^(3[47])/.test( value ) ) { // Amex
+		return value.length === 15;
+	}
+	if ( validTypes & 0x0008 && /^(3(0[012345]|[68]))/.test( value ) ) { // Dinersclub
+		return value.length === 14;
+	}
+	if ( validTypes & 0x0010 && /^(2(014|149))/.test( value ) ) { // Enroute
+		return value.length === 15;
+	}
+	if ( validTypes & 0x0020 && /^(6011)/.test( value ) ) { // Discover
+		return value.length === 16;
+	}
+	if ( validTypes & 0x0040 && /^(3)/.test( value ) ) { // Jcb
+		return value.length === 16;
+	}
+	if ( validTypes & 0x0040 && /^(2131|1800)/.test( value ) ) { // Jcb
+		return value.length === 15;
+	}
+	if ( validTypes & 0x0080 ) { // Unknown
+		return true;
+	}
+	return false;
+}, "Please enter a valid credit card number." );
+
+/**
+ * Validates currencies with any given symbols by @jameslouiz
+ * Symbols can be optional or required. Symbols required by default
+ *
+ * Usage examples:
+ *  currency: ["£", false] - Use false for soft currency validation
+ *  currency: ["$", false]
+ *  currency: ["RM", false] - also works with text based symbols such as "RM" - Malaysia Ringgit etc
+ *
+ *  <input class="currencyInput" name="currencyInput">
+ *
+ * Soft symbol checking
+ *  currencyInput: {
+ *     currency: ["$", false]
+ *  }
+ *
+ * Strict symbol checking (default)
+ *  currencyInput: {
+ *     currency: "$"
+ *     //OR
+ *     currency: ["$", true]
+ *  }
+ *
+ * Multiple Symbols
+ *  currencyInput: {
+ *     currency: "$,£,¢"
+ *  }
+ */
+$.validator.addMethod( "currency", function( value, element, param ) {
+    var isParamString = typeof param === "string",
+        symbol = isParamString ? param : param[ 0 ],
+        soft = isParamString ? true : param[ 1 ],
+        regex;
+
+    symbol = symbol.replace( /,/g, "" );
+    symbol = soft ? symbol + "]" : symbol + "]?";
+    regex = "^[" + symbol + "([1-9]{1}[0-9]{0,2}(\\,[0-9]{3})*(\\.[0-9]{0,2})?|[1-9]{1}[0-9]{0,}(\\.[0-9]{0,2})?|0(\\.[0-9]{0,2})?|(\\.[0-9]{1,2})?)$";
+    regex = new RegExp( regex );
+    return this.optional( element ) || regex.test( value );
+
+}, "Please specify a valid currency" );
+
+$.validator.addMethod( "dateFA", function( value, element ) {
+	return this.optional( element ) || /^[1-4]\d{3}\/((0?[1-6]\/((3[0-1])|([1-2][0-9])|(0?[1-9])))|((1[0-2]|(0?[7-9]))\/(30|([1-2][0-9])|(0?[1-9]))))$/.test( value );
+}, $.validator.messages.date );
+
+/**
+ * Return true, if the value is a valid date, also making this formal check dd/mm/yyyy.
+ *
+ * @example $.validator.methods.date("01/01/1900")
+ * @result true
+ *
+ * @example $.validator.methods.date("01/13/1990")
+ * @result false
+ *
+ * @example $.validator.methods.date("01.01.1900")
+ * @result false
+ *
+ * @example <input name="pippo" class="{dateITA:true}" />
+ * @desc Declares an optional input element whose value must be a valid date.
+ *
+ * @name $.validator.methods.dateITA
+ * @type Boolean
+ * @cat Plugins/Validate/Methods
+ */
+$.validator.addMethod( "dateITA", function( value, element ) {
+	var check = false,
+		re = /^\d{1,2}\/\d
