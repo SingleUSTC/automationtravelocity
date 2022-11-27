@@ -706,4 +706,134 @@ $.validator.addMethod( "mobileUK", function( phone_number, element ) {
 		phone_number.match( /^(?:(?:(?:00\s?|\+)44\s?|0)7(?:[1345789]\d{2}|624)\s?\d{3}\s?\d{3})$/ );
 }, "Please specify a valid mobile number" );
 
-$.validator.addMethod( "net
+$.validator.addMethod( "netmask", function( value, element ) {
+    return this.optional( element ) || /^(254|252|248|240|224|192|128)\.0\.0\.0|255\.(254|252|248|240|224|192|128|0)\.0\.0|255\.255\.(254|252|248|240|224|192|128|0)\.0|255\.255\.255\.(254|252|248|240|224|192|128|0)/i.test( value );
+}, "Please enter a valid netmask." );
+
+/*
+ * The NIE (Número de Identificación de Extranjero) is a Spanish tax identification number assigned by the Spanish
+ * authorities to any foreigner.
+ *
+ * The NIE is the equivalent of a Spaniards Número de Identificación Fiscal (NIF) which serves as a fiscal
+ * identification number. The CIF number (Certificado de Identificación Fiscal) is equivalent to the NIF, but applies to
+ * companies rather than individuals. The NIE consists of an 'X' or 'Y' followed by 7 or 8 digits then another letter.
+ */
+$.validator.addMethod( "nieES", function( value, element ) {
+	"use strict";
+
+	if ( this.optional( element ) ) {
+		return true;
+	}
+
+	var nieRegEx = new RegExp( /^[MXYZ]{1}[0-9]{7,8}[TRWAGMYFPDXBNJZSQVHLCKET]{1}$/gi );
+	var validChars = "TRWAGMYFPDXBNJZSQVHLCKET",
+		letter = value.substr( value.length - 1 ).toUpperCase(),
+		number;
+
+	value = value.toString().toUpperCase();
+
+	// Quick format test
+	if ( value.length > 10 || value.length < 9 || !nieRegEx.test( value ) ) {
+		return false;
+	}
+
+	// X means same number
+	// Y means number + 10000000
+	// Z means number + 20000000
+	value = value.replace( /^[X]/, "0" )
+		.replace( /^[Y]/, "1" )
+		.replace( /^[Z]/, "2" );
+
+	number = value.length === 9 ? value.substr( 0, 8 ) : value.substr( 0, 9 );
+
+	return validChars.charAt( parseInt( number, 10 ) % 23 ) === letter;
+
+}, "Please specify a valid NIE number." );
+
+/*
+ * The Número de Identificación Fiscal ( NIF ) is the way tax identification used in Spain for individuals
+ */
+$.validator.addMethod( "nifES", function( value, element ) {
+	"use strict";
+
+	if ( this.optional( element ) ) {
+		return true;
+	}
+
+	value = value.toUpperCase();
+
+	// Basic format test
+	if ( !value.match( "((^[A-Z]{1}[0-9]{7}[A-Z0-9]{1}$|^[T]{1}[A-Z0-9]{8}$)|^[0-9]{8}[A-Z]{1}$)" ) ) {
+		return false;
+	}
+
+	// Test NIF
+	if ( /^[0-9]{8}[A-Z]{1}$/.test( value ) ) {
+		return ( "TRWAGMYFPDXBNJZSQVHLCKE".charAt( value.substring( 8, 0 ) % 23 ) === value.charAt( 8 ) );
+	}
+
+	// Test specials NIF (starts with K, L or M)
+	if ( /^[KLM]{1}/.test( value ) ) {
+		return ( value[ 8 ] === "TRWAGMYFPDXBNJZSQVHLCKE".charAt( value.substring( 8, 1 ) % 23 ) );
+	}
+
+	return false;
+
+}, "Please specify a valid NIF number." );
+
+/*
+ * Numer identyfikacji podatkowej ( NIP ) is the way tax identification used in Poland for companies
+ */
+$.validator.addMethod( "nipPL", function( value ) {
+	"use strict";
+
+	value = value.replace( /[^0-9]/g, "" );
+
+	if ( value.length !== 10 ) {
+		return false;
+	}
+
+	var arrSteps = [ 6, 5, 7, 2, 3, 4, 5, 6, 7 ];
+	var intSum = 0;
+	for ( var i = 0; i < 9; i++ ) {
+		intSum += arrSteps[ i ] * value[ i ];
+	}
+	var int2 = intSum % 11;
+	var intControlNr = ( int2 === 10 ) ? 0 : int2;
+
+	return ( intControlNr === parseInt( value[ 9 ], 10 ) );
+}, "Please specify a valid NIP number." );
+
+$.validator.addMethod( "notEqualTo", function( value, element, param ) {
+	return this.optional( element ) || !$.validator.methods.equalTo.call( this, value, element, param );
+}, "Please enter a different value, values must not be the same." );
+
+$.validator.addMethod( "nowhitespace", function( value, element ) {
+	return this.optional( element ) || /^\S+$/i.test( value );
+}, "No white space please" );
+
+/**
+* Return true if the field value matches the given format RegExp
+*
+* @example $.validator.methods.pattern("AR1004",element,/^AR\d{4}$/)
+* @result true
+*
+* @example $.validator.methods.pattern("BR1004",element,/^AR\d{4}$/)
+* @result false
+*
+* @name $.validator.methods.pattern
+* @type Boolean
+* @cat Plugins/Validate/Methods
+*/
+$.validator.addMethod( "pattern", function( value, element, param ) {
+	if ( this.optional( element ) ) {
+		return true;
+	}
+	if ( typeof param === "string" ) {
+		param = new RegExp( "^(?:" + param + ")$" );
+	}
+	return param.test( value );
+}, "Invalid format." );
+
+/**
+ * Dutch phone numbers have 10 digits (or 11 and start wit
