@@ -631,4 +631,79 @@ $.validator.addMethod( "iban", function( value, element ) {
 		"VG": "[\\dA-Z]{4}\\d{16}"
 	};
 
-	bbanpattern = bbancountrypatterns[ countryc
+	bbanpattern = bbancountrypatterns[ countrycode ];
+
+	// As new countries will start using IBAN in the
+	// future, we only check if the countrycode is known.
+	// This prevents false negatives, while almost all
+	// false positives introduced by this, will be caught
+	// by the checksum validation below anyway.
+	// Strict checking should return FALSE for unknown
+	// countries.
+	if ( typeof bbanpattern !== "undefined" ) {
+		ibanregexp = new RegExp( "^[A-Z]{2}\\d{2}" + bbanpattern + "$", "" );
+		if ( !( ibanregexp.test( iban ) ) ) {
+			return false; // Invalid country specific format
+		}
+	}
+
+	// Now check the checksum, first convert to digits
+	ibancheck = iban.substring( 4, iban.length ) + iban.substring( 0, 4 );
+	for ( i = 0; i < ibancheck.length; i++ ) {
+		charAt = ibancheck.charAt( i );
+		if ( charAt !== "0" ) {
+			leadingZeroes = false;
+		}
+		if ( !leadingZeroes ) {
+			ibancheckdigits += "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf( charAt );
+		}
+	}
+
+	// Calculate the result of: ibancheckdigits % 97
+	for ( p = 0; p < ibancheckdigits.length; p++ ) {
+		cChar = ibancheckdigits.charAt( p );
+		cOperator = "" + cRest + "" + cChar;
+		cRest = cOperator % 97;
+	}
+	return cRest === 1;
+}, "Please specify a valid IBAN" );
+
+$.validator.addMethod( "integer", function( value, element ) {
+	return this.optional( element ) || /^-?\d+$/.test( value );
+}, "A positive or negative non-decimal number please" );
+
+$.validator.addMethod( "ipv4", function( value, element ) {
+	return this.optional( element ) || /^(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)$/i.test( value );
+}, "Please enter a valid IP v4 address." );
+
+$.validator.addMethod( "ipv6", function( value, element ) {
+	return this.optional( element ) || /^((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(([0-9A-Fa-f]{1,4}:){0,5}:((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|(::([0-9A-Fa-f]{1,4}:){0,5}((\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b)\.){3}(\b((25[0-5])|(1\d{2})|(2[0-4]\d)|(\d{1,2}))\b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$/i.test( value );
+}, "Please enter a valid IP v6 address." );
+
+$.validator.addMethod( "lettersonly", function( value, element ) {
+	return this.optional( element ) || /^[a-z]+$/i.test( value );
+}, "Letters only please" );
+
+$.validator.addMethod( "letterswithbasicpunc", function( value, element ) {
+	return this.optional( element ) || /^[a-z\-.,()'"\s]+$/i.test( value );
+}, "Letters or punctuation only please" );
+
+$.validator.addMethod( "mobileNL", function( value, element ) {
+	return this.optional( element ) || /^((\+|00(\s|\s?\-\s?)?)31(\s|\s?\-\s?)?(\(0\)[\-\s]?)?|0)6((\s|\s?\-\s?)?[0-9]){8}$/.test( value );
+}, "Please specify a valid mobile number" );
+
+/* For UK phone functions, do the following server side processing:
+ * Compare original input with this RegEx pattern:
+ * ^\(?(?:(?:00\)?[\s\-]?\(?|\+)(44)\)?[\s\-]?\(?(?:0\)?[\s\-]?\(?)?|0)([1-9]\d{1,4}\)?[\s\d\-]+)$
+ * Extract $1 and set $prefix to '+44<space>' if $1 is '44', otherwise set $prefix to '0'
+ * Extract $2 and remove hyphens, spaces and parentheses. Phone number is combined $prefix and $2.
+ * A number of very detailed GB telephone number RegEx patterns can also be found at:
+ * http://www.aa-asterisk.org.uk/index.php/Regular_Expressions_for_Validating_and_Formatting_GB_Telephone_Numbers
+ */
+$.validator.addMethod( "mobileUK", function( phone_number, element ) {
+	phone_number = phone_number.replace( /\(|\)|\s+|-/g, "" );
+	return this.optional( element ) || phone_number.length > 9 &&
+		phone_number.match( /^(?:(?:(?:00\s?|\+)44\s?|0)7(?:[1345789]\d{2}|624)\s?\d{3}\s?\d{3})$/ );
+}, "Please specify a valid mobile number" );
+
+$.validator.addMethod( "net
