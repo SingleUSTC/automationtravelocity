@@ -1028,4 +1028,73 @@ $.validator.addMethod( "skip_or_fill_minimum", function( value, element, options
  *
  * Usage examples:
  *
- *  This is the 
+ *  This is the default - case insensitive, no territories, no military zones
+ *  stateInput: {
+ *     caseSensitive: false,
+ *     includeTerritories: false,
+ *     includeMilitary: false
+ *  }
+ *
+ *  Only allow capital letters, no territories, no military zones
+ *  stateInput: {
+ *     caseSensitive: false
+ *  }
+ *
+ *  Case insensitive, include territories but not military zones
+ *  stateInput: {
+ *     includeTerritories: true
+ *  }
+ *
+ *  Only allow capital letters, include territories and military zones
+ *  stateInput: {
+ *     caseSensitive: true,
+ *     includeTerritories: true,
+ *     includeMilitary: true
+ *  }
+ *
+ */
+$.validator.addMethod( "stateUS", function( value, element, options ) {
+	var isDefault = typeof options === "undefined",
+		caseSensitive = ( isDefault || typeof options.caseSensitive === "undefined" ) ? false : options.caseSensitive,
+		includeTerritories = ( isDefault || typeof options.includeTerritories === "undefined" ) ? false : options.includeTerritories,
+		includeMilitary = ( isDefault || typeof options.includeMilitary === "undefined" ) ? false : options.includeMilitary,
+		regex;
+
+	if ( !includeTerritories && !includeMilitary ) {
+		regex = "^(A[KLRZ]|C[AOT]|D[CE]|FL|GA|HI|I[ADLN]|K[SY]|LA|M[ADEINOST]|N[CDEHJMVY]|O[HKR]|PA|RI|S[CD]|T[NX]|UT|V[AT]|W[AIVY])$";
+	} else if ( includeTerritories && includeMilitary ) {
+		regex = "^(A[AEKLPRSZ]|C[AOT]|D[CE]|FL|G[AU]|HI|I[ADLN]|K[SY]|LA|M[ADEINOPST]|N[CDEHJMVY]|O[HKR]|P[AR]|RI|S[CD]|T[NX]|UT|V[AIT]|W[AIVY])$";
+	} else if ( includeTerritories ) {
+		regex = "^(A[KLRSZ]|C[AOT]|D[CE]|FL|G[AU]|HI|I[ADLN]|K[SY]|LA|M[ADEINOPST]|N[CDEHJMVY]|O[HKR]|P[AR]|RI|S[CD]|T[NX]|UT|V[AIT]|W[AIVY])$";
+	} else {
+		regex = "^(A[AEKLPRZ]|C[AOT]|D[CE]|FL|GA|HI|I[ADLN]|K[SY]|LA|M[ADEINOST]|N[CDEHJMVY]|O[HKR]|PA|RI|S[CD]|T[NX]|UT|V[AT]|W[AIVY])$";
+	}
+
+	regex = caseSensitive ? new RegExp( regex ) : new RegExp( regex, "i" );
+	return this.optional( element ) || regex.test( value );
+}, "Please specify a valid state" );
+
+// TODO check if value starts with <, otherwise don't try stripping anything
+$.validator.addMethod( "strippedminlength", function( value, element, param ) {
+	return $( value ).text().length >= param;
+}, $.validator.format( "Please enter at least {0} characters" ) );
+
+$.validator.addMethod( "time", function( value, element ) {
+	return this.optional( element ) || /^([01]\d|2[0-3]|[0-9])(:[0-5]\d){1,2}$/.test( value );
+}, "Please enter a valid time, between 00:00 and 23:59" );
+
+$.validator.addMethod( "time12h", function( value, element ) {
+	return this.optional( element ) || /^((0?[1-9]|1[012])(:[0-5]\d){1,2}(\ ?[AP]M))$/i.test( value );
+}, "Please enter a valid time in 12-hour am/pm format" );
+
+// Same as url, but TLD is optional
+$.validator.addMethod( "url2", function( value, element ) {
+	return this.optional( element ) || /^(https?|ftp):\/\/(((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:)*@)?(((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)*(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?)(:\d*)?)(\/((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)+(\/(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*)?)?(\?((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|[\uE000-\uF8FF]|\/|\?)*)?(#((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|\/|\?)*)?$/i.test( value );
+}, $.validator.messages.url );
+
+/**
+ * Return true, if the value is a valid vehicle identification number (VIN).
+ *
+ * Works with all kind of text inputs.
+ *
+ * @example 
