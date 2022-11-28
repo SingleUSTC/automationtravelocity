@@ -926,4 +926,106 @@ $.validator.addMethod( "postalCodeCA", function( value, element ) {
 /* Matches Italian postcode (CAP) */
 $.validator.addMethod( "postalcodeIT", function( value, element ) {
 	return this.optional( element ) || /^\d{5}$/.test( value );
-}, "Please specify a valid posta
+}, "Please specify a valid postal code" );
+
+$.validator.addMethod( "postalcodeNL", function( value, element ) {
+	return this.optional( element ) || /^[1-9][0-9]{3}\s?[a-zA-Z]{2}$/.test( value );
+}, "Please specify a valid postal code" );
+
+// Matches UK postcode. Does not match to UK Channel Islands that have their own postcodes (non standard UK)
+$.validator.addMethod( "postcodeUK", function( value, element ) {
+	return this.optional( element ) || /^((([A-PR-UWYZ][0-9])|([A-PR-UWYZ][0-9][0-9])|([A-PR-UWYZ][A-HK-Y][0-9])|([A-PR-UWYZ][A-HK-Y][0-9][0-9])|([A-PR-UWYZ][0-9][A-HJKSTUW])|([A-PR-UWYZ][A-HK-Y][0-9][ABEHMNPRVWXY]))\s?([0-9][ABD-HJLNP-UW-Z]{2})|(GIR)\s?(0AA))$/i.test( value );
+}, "Please specify a valid UK postcode" );
+
+/*
+ * Lets you say "at least X inputs that match selector Y must be filled."
+ *
+ * The end result is that neither of these inputs:
+ *
+ *	<input class="productinfo" name="partnumber">
+ *	<input class="productinfo" name="description">
+ *
+ *	...will validate unless at least one of them is filled.
+ *
+ * partnumber:	{require_from_group: [1,".productinfo"]},
+ * description: {require_from_group: [1,".productinfo"]}
+ *
+ * options[0]: number of fields that must be filled in the group
+ * options[1]: CSS selector that defines the group of conditionally required fields
+ */
+$.validator.addMethod( "require_from_group", function( value, element, options ) {
+	var $fields = $( options[ 1 ], element.form ),
+		$fieldsFirst = $fields.eq( 0 ),
+		validator = $fieldsFirst.data( "valid_req_grp" ) ? $fieldsFirst.data( "valid_req_grp" ) : $.extend( {}, this ),
+		isValid = $fields.filter( function() {
+			return validator.elementValue( this );
+		} ).length >= options[ 0 ];
+
+	// Store the cloned validator for future validation
+	$fieldsFirst.data( "valid_req_grp", validator );
+
+	// If element isn't being validated, run each require_from_group field's validation rules
+	if ( !$( element ).data( "being_validated" ) ) {
+		$fields.data( "being_validated", true );
+		$fields.each( function() {
+			validator.element( this );
+		} );
+		$fields.data( "being_validated", false );
+	}
+	return isValid;
+}, $.validator.format( "Please fill at least {0} of these fields." ) );
+
+/*
+ * Lets you say "either at least X inputs that match selector Y must be filled,
+ * OR they must all be skipped (left blank)."
+ *
+ * The end result, is that none of these inputs:
+ *
+ *	<input class="productinfo" name="partnumber">
+ *	<input class="productinfo" name="description">
+ *	<input class="productinfo" name="color">
+ *
+ *	...will validate unless either at least two of them are filled,
+ *	OR none of them are.
+ *
+ * partnumber:	{skip_or_fill_minimum: [2,".productinfo"]},
+ * description: {skip_or_fill_minimum: [2,".productinfo"]},
+ * color:		{skip_or_fill_minimum: [2,".productinfo"]}
+ *
+ * options[0]: number of fields that must be filled in the group
+ * options[1]: CSS selector that defines the group of conditionally required fields
+ *
+ */
+$.validator.addMethod( "skip_or_fill_minimum", function( value, element, options ) {
+	var $fields = $( options[ 1 ], element.form ),
+		$fieldsFirst = $fields.eq( 0 ),
+		validator = $fieldsFirst.data( "valid_skip" ) ? $fieldsFirst.data( "valid_skip" ) : $.extend( {}, this ),
+		numberFilled = $fields.filter( function() {
+			return validator.elementValue( this );
+		} ).length,
+		isValid = numberFilled === 0 || numberFilled >= options[ 0 ];
+
+	// Store the cloned validator for future validation
+	$fieldsFirst.data( "valid_skip", validator );
+
+	// If element isn't being validated, run each skip_or_fill_minimum field's validation rules
+	if ( !$( element ).data( "being_validated" ) ) {
+		$fields.data( "being_validated", true );
+		$fields.each( function() {
+			validator.element( this );
+		} );
+		$fields.data( "being_validated", false );
+	}
+	return isValid;
+}, $.validator.format( "Please either skip these fields or fill at least {0} of them." ) );
+
+/* Validates US States and/or Territories by @jdforsythe
+ * Can be case insensitive or require capitalization - default is case insensitive
+ * Can include US Territories or not - default does not
+ * Can include US Military postal abbreviations (AA, AE, AP) - default does not
+ *
+ * Note: "States" always includes DC (District of Colombia)
+ *
+ * Usage examples:
+ *
+ *  This is the 
