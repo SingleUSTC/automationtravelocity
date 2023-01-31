@@ -421,3 +421,13 @@
             setValidationValues(options, "regex", options.params.regex);
         }
     });
+    adapters.add("fileextensions", ["extensions"], function (options) {
+        setValidationValues(options, "extension", options.params.extensions);
+    });
+
+    $(function () {
+        $jQval.unobtrusive.parse(document);
+    });
+
+    return $jQval.unobtrusive;
+}));
