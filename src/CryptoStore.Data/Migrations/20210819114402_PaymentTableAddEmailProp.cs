@@ -2,13 +2,13 @@
 
 namespace CryptoStore.Data.Migrations
 {
-    public partial class ServiceExplainProperty : Migration
+    public partial class PaymentTableAddEmailProp : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
-                name: "ServiceExplain",
-                table: "Services",
+                name: "Email",
+                table: "Payments",
                 type: "nvarchar(max)",
                 nullable: false,
                 defaultValue: "");
@@ -17,8 +17,8 @@ namespace CryptoStore.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "ServiceExplain",
-                table: "Services");
+                name: "Email",
+                table: "Payments");
         }
     }
 }
