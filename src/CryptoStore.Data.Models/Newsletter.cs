@@ -1,4 +1,13 @@
 ﻿namespace CryptoStore.Data.Models
 {
     using CryptoStore.Data.Models.Base;
-    usin
+    using System.ComponentModel.DataAnnotations;
+
+    public class Newsletter : DeletableEntity 
+    {
+        public int Id { get; set; } 
+
+        [Required] 
+        public string Email { get; set; }
+    }
+}
