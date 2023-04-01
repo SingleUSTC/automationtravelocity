@@ -23,4 +23,11 @@
         public string Email { get; set; }
 
         [Required(ErrorMessage = RequiredField)]
-        [StringLength(MaxPh
+        [StringLength(MaxPhoneLenght, MinimumLength = MinPhoneLenght)]
+        public string Phone { get; set; }
+
+        [Required(ErrorMessage = RequiredField)] 
+        [MaxLength(MaxMessagesLenght)] 
+        public string Message { get; set; }
+    }
+}
